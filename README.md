@@ -1,2 +1,8 @@
 just for pratice
-python download_report.py   --url http://172.16.7.64/CxRestAPI   --user admin@cx  --password 1qaz@WSX#EDC   --project "Tiffany_GitLab_Runner_test"   --output scan_report.pdf
+
+    - python download_report.py ^
+        --url "$CHECKMARX_SERVER" ^
+        --user "$CHECKMARX_USERNAME" ^
+        --password "$CHECKMARX_PASSWORD" ^
+        --project "$CX_PROJECT" ^
+        --output-dir "sast_reports"
