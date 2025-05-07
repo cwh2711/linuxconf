@@ -1,7 +1,2 @@
 just for pratice
-python download_cxsast_report.py \
-  --url http://cxsast.local/CxRestAPI \
-  --user admin \
-  --password yourpassword \
-  --project "My Project" \
-  --output scan_report.pdf
+python download_report.py   --url http://172.16.7.64/CxRestAPI   --user admin@cx  --password 1qaz@WSX#EDC   --project "Tiffany_GitLab_Runner_test"   --output scan_report.pdf
