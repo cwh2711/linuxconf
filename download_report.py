@@ -2,13 +2,39 @@ import requests
 import time
 import argparse
 import sys
+import certifi
+import os
+import re
+from datetime import datetime
 
 def login(session, base_url, username, password):
-    url = f'{base_url}/auth/login'
-    response = session.post(url, json={'username': username, 'password': password})
+    url = f'{base_url}/auth/identity/connect/token'
+    print(f'登入 API: {url}')
+    
+    payload = {
+        'username': username,
+        'password': password,
+        'grant_type': 'password',
+        'scope': 'sast_rest_api',
+        'client_id': 'resource_owner_client',
+        'client_secret': '014DF517-39D1-4453-B7B3-9930C563627C'
+    }
+
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+
+    response = session.post(url, data=payload, headers=headers, verify=False)
+    print(f'HTTP 狀態碼: {response.status_code}')
+#    print(f'回應內容: {response.text}') 登不進去再打開查看
+
     if response.status_code != 200:
         print('登入失敗:', response.text)
         sys.exit(1)
+
+    token = response.json()['access_token']
+    session.headers.update({'Authorization': f'Bearer {token}'})
+    print('登入成功，已設置 Bearer Token')
 
 def get_project_id(session, base_url, project_name):
     url = f'{base_url}/projects'
@@ -60,10 +86,16 @@ def main():
     parser.add_argument('--user', required=True, help='Username')
     parser.add_argument('--password', required=True, help='Password')
     parser.add_argument('--project', required=True, help='Project name')
-    parser.add_argument('--output', default='CxSAST_Report.pdf', help='Output file name')
+    parser.add_argument('--output-dir', default='.', help='Directory to save the report (default: current directory)')
 
     args = parser.parse_args()
 
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H%M")
+    output_filename = f"{args.project}_{timestamp}.pdf"
+
+    os.makedirs(args.output_dir, exist_ok=True)
+    output_path = os.path.join(args.output_dir, output_filename)
+    
     session = requests.Session()
 
     login(session, args.url, args.user, args.password)
@@ -71,7 +103,7 @@ def main():
     scan_id = get_latest_scan_id(session, args.url, project_id)
     report_id = create_report(session, args.url, scan_id)
     wait_for_report_ready(session, args.url, report_id)
-    download_report(session, args.url, report_id, args.output)
+    download_report(session, args.url, report_id, output_path)
 
 if __name__ == '__main__':
     main()
