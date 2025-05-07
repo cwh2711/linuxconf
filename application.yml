@@ -1,0 +1,59 @@
+
+stages:
+  - scan
+  - report
+
+checkmarx-scan:
+  stage: scan
+  variables:
+    CHECKMARX_INCREMENTAL: "false"
+    CHECKMARX_USERNAME: "admin@cx"
+    CHECKMARX_PASSWORD: "1qaz@WSX#EDC"
+    
+    GITLAB_URL: "https://git.gss.com.tw/tiffany_wh_chen/testing/"
+    GITLAB_API_URL: "https://git.gss.com.tw/api/v4/"
+    GITLAB_FALSE_POSITIVE_LABEL: "false-positive"
+    GITLAB_BLOCK_MERGE: "true"
+    GITLAB_ERROR_MERGE: "true"
+    CX_PROJECT: "Tiffany_GitLab_Runner_test"
+    CHECKMARX_VERSION: "9.6"
+    CHECKMARX_SETTINGS_OVERRIDE: "true"
+    CHECKMARX_CONFIGURATION: "Default Configuration"
+    CHECKMARX_SCAN_PRESET: "Checkmarx Default"
+    CX_TEAM: "/CxServer"
+    CX_FLOW_BREAK_BUILD: "true"
+    SECURITY_DASHBOARD_ON_MR: "true"
+    PARAMS: ""
+  script:
+    - java -jar "C:/cxflow/cx-flow-1.7.08.jar"
+          --scan 
+          --cx-flow.filter-severity
+          --cx-flow.filter-category
+          --cx-flow.bug-tracker="GitLab"
+          --cxflow.enabled-vulnerability-scanners=sast
+          --app="${CI_PROJECT_NAME}" 
+          --namespace="${CI_PROJECT_NAMESPACE}" 
+          --repo-name="${CI_PROJECT_NAME}" 
+          --repo-url="${CI_REPOSITORY_URL}" 
+          --cx-team="${CX_TEAM}" 
+          --cx-project="${CX_PROJECT}" 
+          --branch="${CI_COMMIT_BRANCH}"
+          --break-build="${CX_FLOW_BREAK_BUILD}"  
+          --f=. 
+          --logging.level.org.springframework.web.client.RestTemplate="TRACE"
+          --logging.level.com.checkmarx.flow.service="DEBUG"
+          --logging.level.org.apache.http.wire="TRACE"
+          ${PARAMS}
+    - ReportPDF "C:\report_test\CxConsole.pdf"
+
+download-report:
+  stage: report
+  script:
+    - echo "下載報告中..."
+    - mkdir -p reports
+    - curl -u "$CHECKMARX_USERNAME:$CHECKMARX_PASSWORD" -o reports/report.sarif "https://checkmarx-server/api/reports/${CX_PROJECT}.sarif"
+    - curl -u "$CHECKMARX_USERNAME:$CHECKMARX_PASSWORD" -o reports/report.pdf "https://checkmarx-server/api/reports/${CX_PROJECT}.pdf"
+  artifacts:
+    paths:
+      - reports/
+
